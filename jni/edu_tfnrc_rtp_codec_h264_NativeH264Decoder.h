@@ -36,7 +36,7 @@ JNIEXPORT jint JNICALL Java_edu_tfnrc_rtp_codec_h264_NativeH264Decoder_DecodeAnd
  * Method:    SetDecoderStatus
  * Signature: (I)I
  */
-JNIEXPORT jint JNICALL Java_edu_tfnrc_rtp_codec_h264_NativeH264Decoder_SetDecoderStatus
+JNIEXPORT jint JNICALL Java_edu_tfnrc_rtp_codec_h264_NativeH264Decoder_SetDecoderState
   (JNIEnv *, jclass, jint);
 
 #ifdef __cplusplus

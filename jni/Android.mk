@@ -61,6 +61,6 @@ include $(CLEAR_VARS)
 LOCAL_MODULE    := decoder
 LOCAL_SRC_FILES := libdecoder.c
 
-LOCAL_LDLIBS := -llog -ljnigraphics -lz -landroid
+LOCAL_LDLIBS := -llog -ljnigraphics -lz -landroid -pthread
 LOCAL_SHARED_LIBRARIES:=avcodec-57-prebuilt  avformat-57-prebuilt avutil-55-prebuilt avswresample-2-prebuilt swscale-4-prebuilt postproc-54-prebuilt
 include $(BUILD_SHARED_LIBRARY)

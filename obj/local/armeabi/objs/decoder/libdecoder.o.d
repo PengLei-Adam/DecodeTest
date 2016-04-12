@@ -19,7 +19,6 @@
  /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/asm/posix_types.h \
  /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/asm-generic/posix_types.h \
  /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/sys/sysmacros.h \
- /cygdrive/f/IdeaProjects/DecodeTest/jni/edu_tfnrc_rtp_codec_h264_NativeH264Decoder.h \
  /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/jni.h \
  /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/stdlib.h \
  /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/string.h \
@@ -28,20 +27,36 @@
  /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/alloca.h \
  /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/strings.h \
  /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/memory.h \
- /cygdrive/f/IdeaProjects/DecodeTest/jni/libavcodec/avcodec.h \
+ /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/pthread.h \
+ /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/time.h \
+ /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/sys/time.h \
+ /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/linux/time.h \
+ /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/signal.h \
  /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/errno.h \
  /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/linux/errno.h \
  /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/asm/errno.h \
  /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/asm-generic/errno.h \
  /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/asm-generic/errno-base.h \
- /cygdrive/f/IdeaProjects/DecodeTest/jni/libavutil/samplefmt.h \
- /cygdrive/f/IdeaProjects/DecodeTest/jni/libavutil/avutil.h \
- /cygdrive/f/IdeaProjects/DecodeTest/jni/libavutil/common.h \
- /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/inttypes.h \
  /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/limits.h \
  /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/sys/limits.h \
  /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/linux/limits.h \
  /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/sys/syslimits.h \
+ /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/asm/sigcontext.h \
+ /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/linux/signal.h \
+ /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/asm/signal.h \
+ /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/asm-generic/signal-defs.h \
+ /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/asm/siginfo.h \
+ /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/asm-generic/siginfo.h \
+ /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/sys/ucontext.h \
+ /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/sys/user.h \
+ /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/sched.h \
+ /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/linux/sched.h \
+ /cygdrive/f/IdeaProjects/DecodeTest/jni/edu_tfnrc_rtp_codec_h264_NativeH264Decoder.h \
+ /cygdrive/f/IdeaProjects/DecodeTest/jni/libavcodec/avcodec.h \
+ /cygdrive/f/IdeaProjects/DecodeTest/jni/libavutil/samplefmt.h \
+ /cygdrive/f/IdeaProjects/DecodeTest/jni/libavutil/avutil.h \
+ /cygdrive/f/IdeaProjects/DecodeTest/jni/libavutil/common.h \
+ /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/inttypes.h \
  /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/math.h \
  /cygdrive/f/IdeaProjects/DecodeTest/jni/libavutil/attributes.h \
  /cygdrive/f/IdeaProjects/DecodeTest/jni/libavutil/macros.h \
@@ -71,9 +86,6 @@
  /cygdrive/f/IdeaProjects/DecodeTest/jni/libavutil/version.h \
  /cygdrive/f/IdeaProjects/DecodeTest/jni/libavutil/avutil.h \
  /cygdrive/f/IdeaProjects/DecodeTest/jni/libavformat/avformat.h \
- /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/time.h \
- /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/sys/time.h \
- /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/linux/time.h \
  /cygdrive/f/IdeaProjects/DecodeTest/jni/libavcodec/avcodec.h \
  /cygdrive/f/IdeaProjects/DecodeTest/jni/libavformat/avio.h \
  /cygdrive/f/IdeaProjects/DecodeTest/jni/libavutil/common.h \
@@ -122,8 +134,6 @@
 
 /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/sys/sysmacros.h:
 
-/cygdrive/f/IdeaProjects/DecodeTest/jni/edu_tfnrc_rtp_codec_h264_NativeH264Decoder.h:
-
 /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/jni.h:
 
 /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/stdlib.h:
@@ -140,7 +150,15 @@
 
 /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/memory.h:
 
-/cygdrive/f/IdeaProjects/DecodeTest/jni/libavcodec/avcodec.h:
+/cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/pthread.h:
+
+/cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/time.h:
+
+/cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/sys/time.h:
+
+/cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/linux/time.h:
+
+/cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/signal.h:
 
 /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/errno.h:
 
@@ -152,14 +170,6 @@
 
 /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/asm-generic/errno-base.h:
 
-/cygdrive/f/IdeaProjects/DecodeTest/jni/libavutil/samplefmt.h:
-
-/cygdrive/f/IdeaProjects/DecodeTest/jni/libavutil/avutil.h:
-
-/cygdrive/f/IdeaProjects/DecodeTest/jni/libavutil/common.h:
-
-/cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/inttypes.h:
-
 /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/limits.h:
 
 /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/sys/limits.h:
@@ -167,6 +177,38 @@
 /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/linux/limits.h:
 
 /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/sys/syslimits.h:
+
+/cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/asm/sigcontext.h:
+
+/cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/linux/signal.h:
+
+/cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/asm/signal.h:
+
+/cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/asm-generic/signal-defs.h:
+
+/cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/asm/siginfo.h:
+
+/cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/asm-generic/siginfo.h:
+
+/cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/sys/ucontext.h:
+
+/cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/sys/user.h:
+
+/cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/sched.h:
+
+/cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/linux/sched.h:
+
+/cygdrive/f/IdeaProjects/DecodeTest/jni/edu_tfnrc_rtp_codec_h264_NativeH264Decoder.h:
+
+/cygdrive/f/IdeaProjects/DecodeTest/jni/libavcodec/avcodec.h:
+
+/cygdrive/f/IdeaProjects/DecodeTest/jni/libavutil/samplefmt.h:
+
+/cygdrive/f/IdeaProjects/DecodeTest/jni/libavutil/avutil.h:
+
+/cygdrive/f/IdeaProjects/DecodeTest/jni/libavutil/common.h:
+
+/cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/inttypes.h:
 
 /cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/math.h:
 
@@ -225,12 +267,6 @@
 /cygdrive/f/IdeaProjects/DecodeTest/jni/libavutil/avutil.h:
 
 /cygdrive/f/IdeaProjects/DecodeTest/jni/libavformat/avformat.h:
-
-/cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/time.h:
-
-/cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/sys/time.h:
-
-/cygdrive/d/android-ndk-r10d/platforms/android-21/arch-arm/usr/include/linux/time.h:
 
 /cygdrive/f/IdeaProjects/DecodeTest/jni/libavcodec/avcodec.h:
 

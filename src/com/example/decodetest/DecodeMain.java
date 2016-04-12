@@ -51,6 +51,7 @@ public class DecodeMain extends Activity implements View.OnClickListener{
 //		nalReader = new NalReader(/*Environment.getExternalStorageDirectory()*/
 //				"/sdcard/Pictures/frames7.264");
 		player = new RtspPlayer(uri, surfaceView);
+		player.prepare();
 
 	}
 
@@ -90,10 +91,6 @@ public class DecodeMain extends Activity implements View.OnClickListener{
 	@Override
 	public void onClick(View v) {
 		switch(v.getId()){
-			/*case R.id.buttonInit:
-				Log.d(TAG, "init");
-				player.preparePlayer();
-				break;*/
 			case R.id.buttonClose:
 				player.closePlayer();
 

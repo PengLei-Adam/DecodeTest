@@ -1,11 +1,11 @@
 #include<stdio.h>
-//#include<jni.h>
-#include "edu_tfnrc_rtp_codec_h264_NativeH264Decoder.h"
+#include<jni.h>
 #include<stdlib.h>
+#include<pthread.h>
+#include "edu_tfnrc_rtp_codec_h264_NativeH264Decoder.h"
 #include "libavcodec/avcodec.h"
 #include "libavutil/avutil.h"
 #include "libavformat/avformat.h"
-
 #include "libavutil/frame.h"
 #include "libavutil/error.h"
 #include "libswscale/swscale.h"
@@ -17,30 +17,44 @@
 #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 
-#define STATUS_OFF		0
-#define STATUS_PLAY		1
-#define STATUS_PAUSE	2
-#define STATUS_CLOSE	3
-#define STATUS_CLOSED	4
+#define STATE_OFF		0
+#define STATE_READY		1
+#define STATE_PLAY		2
+#define STATE_PAUSE		3
+#define STATE_CLOSE		4
 
 //Global variables
 
 AVCodec * codec;			/*CODEC*/
-AVCodecContext * c;		/*CODEC Context*/
-AVDictionary * opts;	/*Dictionary*/
+AVCodecContext * c;			/*CODEC Context*/
+AVDictionary * opts;		/*Dictionary*/
 //AVPacket * pkt;			/*AVPacket*/
-int cnt;						/*解码计数*/
-int  got_picture;		/*是否解码一帧图像*/
+int cnt;					/*解码计数*/
+int  got_picture;			/*是否解码一帧图像*/
 AVFrame * picture, * pictureARGB;		/*解码后的图像帧空间*/
-FILE * out_file;
-AVFormatContext *pFormatCtx;/*流文件*/
-struct Swscontext * img_convert_ctx;/*转换格式结构*/
-char * url;				/*传入的视频流地址*/
-volatile int status;			/*设置解码器状态*/
+FILE * out_file;						/*输出文件*/
+AVFormatContext *pFormatCtx;			/*流文件*/
+struct Swscontext * img_convert_ctx;	/*转换格式结构*/
+char * url;					/*传入的视频流地址*/
+int state;					/*设置解码器状态*/
+
+//pthread variables
+static pthread_mutex_t statelock = PTHREAD_MUTEX_INITIALIZER;
+pthread_t thread;
 
 /*设置解码器状态函数*/
-int setStatus(int statusId){
-	return status = statusId;
+int setState(int stateId){
+	int error;
+	if(error = pthread_mutex_lock(&statelock)){
+		LOGD("failed to lock state: Error %d", error);
+	}
+	if(stateId < 0 || stateId > STATE_CLOSE)
+      		return -1;
+	state = stateId;
+	if(error = pthread_mutex_unlock(&statelock)){
+		LOGD("failed to unlock state: Error %d", error);
+	}
+	return state;
 }
 
 //C语言的工具方法：将Java端传过来的String类型转换为char数组类型
@@ -64,6 +78,7 @@ char* Jstring2CStr(JNIEnv* env, jstring jstr){
 JNIEXPORT jint JNICALL Java_edu_tfnrc_rtp_codec_h264_NativeH264Decoder_InitDecoder
   (JNIEnv * env, jclass clazz){
 
+	if(state == STATE_OFF){
 //  out_file = fopen("/sdcard/Pictures/output.yuv", "wb");
   /*CODEC的初始化，初始化一些常量表,在avcodec_register_all()中进行
 	avcodec_init();*/
@@ -75,102 +90,44 @@ JNIEXPORT jint JNICALL Java_edu_tfnrc_rtp_codec_h264_NativeH264Decoder_InitDecod
 	/*初始化网络*/
 	avformat_network_init();
 
-	// 打开流文件
-    pFormatCtx = avformat_alloc_context();
-    if(!pFormatCtx)
-    	LOGD("failed to alloc format context");
+	setState(STATE_READY);
+	}
 
-//    url = Jstring2CStr(env, jurl);
-//    av_dict_set(&opts, "rtsp_transport", "udp", 0);
-//    int ret;
-//    char erbuf[1024];
-//    if((ret = avformat_open_input(&pFormatCtx, url, NULL, &opts)) < 0){
-//    	LOGD("failed to open format context: %d", ret);
-//    	av_strerror(ret, erbuf, 1024);
-//    	LOGD("%s", erbuf);
-//    	return 201;
-//    }
-//    // 获得流描述信息
-//    if (avformat_find_stream_info(pFormatCtx, NULL) < 0){
-//    	LOGD("failed to find stream info");
-//    	return 202;
-//    }
-//    // Dump information about file onto standard error
-//    av_dump_format(pFormatCtx, 0, url, 0);
-//
-//    int i;
-//
-//    // Find the first video stream
-//    int videoStream = -1;
-//    for (i = 0; i<pFormatCtx->nb_streams; i++)
-//    	if (pFormatCtx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO) { //CODEC_TYPE_VIDEO(enum CodecType->AVMediaType)
-//    		videoStream = i;
-//    		break;
-//    	}
-//    if (videoStream == -1)
-//    	return -1;
-//
-//    // Get a pointer to the codec context for the video stream
-//    c = pFormatCtx->streams[videoStream]->codec;
-//	/*查找 流 CODEC(H264)*/
-//	codec = avcodec_find_decoder(c->codec_id);
-//
-//	if(!codec) {
-//				LOGD("failed to create CODEC");
-//				return 101;
-//	}
-	/*初始化CODEC的默认参数*/
-	/*c = avcodec_alloc_context3(codec);
-	if(!c) {
-		LOGD("failed to init CODEC Context");
-		return 102;
-	}*/
-	/*设置dictionary*/
-	/*if(av_dict_set(&opts, "b", "2.5M", 0) < 0){
-		LOGD("failed to set dictionary");
-		return 103;
-	}*/
-	/*打开CODEC，这里初始化H.264解码器，调用decode_init本地函数*/
-//	if (avcodec_open2(c, codec, &opts) < 0) 	{
-//		LOGD("failed to open CODEC");
-//		return 104;
-//	}
-	/*为AVFrame申请空间，并清零*/
-//  picture = av_frame_alloc();
-//	if(!picture) 	{
-//		LOGD("failed to init AVFrame");
-//		return 105;
-//	}
-	/*为AVPacket申请空间*/
-//	pkt = (AVPacket*)malloc(sizeof(AVPacket));
-//	if(!pkt){
-//		LOGD("failed to get AVPacket");
-//	}
   LOGD("init finished");
   return 0;
 }
 
   JNIEXPORT jint JNICALL Java_edu_tfnrc_rtp_codec_h264_NativeH264Decoder_DeinitDecoder
     (JNIEnv * env, jclass clazz){
-
+	if(state != STATE_PLAY) return state;
+	setState(STATE_CLOSE);
 //    if(out_file) fclose(out_file);
-	while(status != STATUS_CLOSED);
+	int error;
+
+	if(error = pthread_join(thread, NULL)){
+		LOGD("failed to join decode thread: Error %d", error);
+	}
     /*关闭CODEC，释放资源,调用decode_end本地函数*/
 	if(c) {
 		avcodec_close(c);
-//		avcodec_free_context(&c);
-//		c = NULL;
+		c = NULL;
 	}
 	/*释放AVFrame空间*/
 	if(picture) {
 		av_frame_free(&picture);
+		picture = NULL;
 	}
+	if(pictureARGB) {
+    		av_frame_free(&pictureARGB);
+    		pictureARGB = NULL;
+    	}
 	// Close the stream file
     avformat_close_input(&pFormatCtx);
+    pFormatCtx = NULL;
 	cnt = 0;
 	sws_freeContext(img_convert_ctx);
     img_convert_ctx = NULL;
-    setStatus(STATUS_OFF);
+    setState(STATE_READY);
 	LOGD("deinit");
 	return 0;
 
@@ -183,6 +140,11 @@ JNIEXPORT jint JNICALL Java_edu_tfnrc_rtp_codec_h264_NativeH264Decoder_InitDecod
         av_dict_set(&opts, "rtsp_transport", "tcp", 0);
         int ret;
         char erbuf[256];
+        // 打开流文件
+        pFormatCtx = avformat_alloc_context();
+        if(!pFormatCtx)
+            LOGD("failed to alloc format context");
+
         if((ret = avformat_open_input(&pFormatCtx, url, NULL, &opts)) < 0){
         	LOGD("failed to open format context: %d", ret);
         	av_strerror(ret, erbuf, 256);
@@ -215,8 +177,8 @@ JNIEXPORT jint JNICALL Java_edu_tfnrc_rtp_codec_h264_NativeH264Decoder_InitDecod
     	codec = avcodec_find_decoder(c->codec_id);
 
     	if(!codec) {
-    				LOGD("failed to create CODEC");
-    				return 101;
+    			LOGD("failed to create CODEC");
+    			return 101;
     	}
     	/*打开CODEC，这里初始化H.264解码器，调用decode_init本地函数*/
     	if (avcodec_open2(c, codec, &opts) < 0) 	{
@@ -314,22 +276,25 @@ JNIEXPORT jint JNICALL Java_edu_tfnrc_rtp_codec_h264_NativeH264Decoder_InitDecod
 		AVPacket packet;
 		int consumed_bytes;
 
-		setStatus(STATUS_PLAY);
+		setState(STATE_PLAY);
+		thread = pthread_self();
 		int numFrames = 0;
     	//开始解码
 		while(av_read_frame(pFormatCtx, &packet) >= 0){
 			if (packet.stream_index == videoStream) {
-    		//NAL 解码, 返回消耗的码流长度
-    		consumed_bytes= avcodec_decode_video2(c, picture, &got_picture, &packet);
 
-    		if(status == STATUS_OFF){
-    			setStatus(STATUS_PLAY);
-    		}else if(status == STATUS_PAUSE){
-    			break;
-    		}else if(status == STATUS_CLOSE){
+    		if(state == STATE_READY){
+    			state = STATE_PLAY;
+    		}else if(state == STATE_PAUSE){
+    			continue;
+    		}else if(state == STATE_CLOSE){
     			//TODO:Close the decoder
     			break;
+    		}else if(state == STATE_OFF){
+    			return -1;
     		}
+    		//NAL 解码, 返回消耗的码流长度
+  			consumed_bytes= avcodec_decode_video2(c, picture, &got_picture, &packet);
     		cnt++;
 
     		/*输出当前的解码信息*/
@@ -370,7 +335,7 @@ JNIEXPORT jint JNICALL Java_edu_tfnrc_rtp_codec_h264_NativeH264Decoder_InitDecod
 //	(*env)->DeleteLocalRef(env, jframeData);
 	av_free(bufferYUV);
 	av_free(bufferARGB);
-	setStatus(STATUS_CLOSED);
+	free(url);
     	return 0;
 
 }
@@ -394,9 +359,8 @@ JNIEXPORT jint JNICALL Java_edu_tfnrc_rtp_codec_h264_NativeH264Decoder_InitDecod
     }
 
 
-JNIEXPORT jint JNICALL Java_edu_tfnrc_rtp_codec_h264_NativeH264Decoder_SetDecoderStatus
-  (JNIEnv *env, jclass clazz, jint statusId){
-  	if(statusId < 0 || statusId > STATUS_CLOSE)
-  		return -1;
-  	return setStatus(statusId);
+JNIEXPORT jint JNICALL Java_edu_tfnrc_rtp_codec_h264_NativeH264Decoder_SetDecoderState
+  (JNIEnv *env, jclass clazz, jint stateId){
+
+  	return setState(stateId);
   }

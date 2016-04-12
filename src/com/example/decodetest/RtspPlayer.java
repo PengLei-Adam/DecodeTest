@@ -28,14 +28,16 @@ public class RtspPlayer extends Thread{
     public void setUri(String uri){
         this.uri = uri;
     }
-    public void preparePlayer(){
+    public void prepare(){
+        if(NativeH264Decoder.InitDecoder() < 0){
+            Log.d(TAG,"Failed to init decoder");
+        }
     }
     public void stopPlaying(){
 
     }
 
     public void closePlayer(){
-        NativeH264Decoder.SetDecoderStatus(3);
         if(NativeH264Decoder.DeinitDecoder() == 0)
             Log.d(TAG, "Deinit finish");
         surfaceView.clearImage();
@@ -43,9 +45,7 @@ public class RtspPlayer extends Thread{
 
     @Override
     public void run() {
-        if(NativeH264Decoder.InitDecoder() < 0){
-            Log.d(TAG,"Failed to init decoder");
-        }
+
         NativeH264Decoder.DecodeAndConvert(uri, this.surfaceView);
     }
 }
