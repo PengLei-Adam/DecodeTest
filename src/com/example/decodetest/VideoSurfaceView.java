@@ -8,12 +8,19 @@ import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
+import java.io.File;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadPoolExecutor;
+
 /**
  * Created by leip on 2016/3/21.
  */
 public class VideoSurfaceView extends SurfaceView {
     //debug
     private static final String TAG = "VideoSurfaceView";
+
+    private static final int DEFAULT_OFFSET = 4;
     /**
      * No aspect ratio ×Ýºá±È
      */
@@ -38,11 +45,27 @@ public class VideoSurfaceView extends SurfaceView {
     * Bitmap
     * */
     private Bitmap rgbFrame = null;
+    private Bitmap photoFrame = null;
 
     private int frameWidth = 1280;
     private int frameHeight = 720;
+    /*
+    * offset = 0 or 4 to make frameData 16-byte aligned
+    * the address should be 0x...0,
+    * not 0x...8 which will arise a SIGBUS signal
+    * */
+    private int offset = 0;
 
     private int[] frameData = null;
+
+    //Player state
+    private PlayerState playerState = null;
+
+    //Thread pool
+    private ThreadPoolExecutor pool = null;
+    private Future future = null;
+    private BmpSaver bmpSaver = new BmpSaver("MicroPhoto", null, null);
+    private File lastSavedPicture = null;
 
     /**
      * Constructor
@@ -148,7 +171,7 @@ public class VideoSurfaceView extends SurfaceView {
                 }
             }finally{
                 if(canvas != null){
-                    Log.d(TAG, "canvas draw");
+//                    Log.d(TAG, "canvas draw");
                     //Clear screen first
                     //TODO: is neccesary???
                     canvas.drawARGB(255, 0, 0, 0);
@@ -159,6 +182,8 @@ public class VideoSurfaceView extends SurfaceView {
             }
         }
     }
+
+
 
     public void clearImage(){
         if(surfaceCreated){
@@ -176,6 +201,12 @@ public class VideoSurfaceView extends SurfaceView {
         }
     }
 
+    public void setState(int state){
+        playerState.setState(state);
+    }
+    public int getState(){
+        return playerState.getState();
+    }
     /**
      * Init the view
      */
@@ -185,8 +216,11 @@ public class VideoSurfaceView extends SurfaceView {
         holder = this.getHolder();
         holder.addCallback(surfaceCallback);
         //init frameData
-        frameData = new int[frameWidth * frameHeight];
-
+        frameData = new int[frameWidth * frameHeight + DEFAULT_OFFSET];
+        //init player state
+        playerState = new PlayerState();
+        //create thread pool
+        pool = (ThreadPoolExecutor) Executors.newFixedThreadPool(3);
     }
 
     /**
@@ -233,8 +267,54 @@ public class VideoSurfaceView extends SurfaceView {
             frameData = new int[width * height];
             return;
         }*/
-        rgbFrame.setPixels(frameData, 0, width, 0, 0, width, height);
+        Log.d(TAG, "offset = " + offset);
+        rgbFrame.setPixels(frameData, offset, width, 0, 0, width, height);
 
+        if(playerState.getState() == PlayerState.STATE_SHOOT){
+            savePicture(rgbFrame);
+        }
         setImage(rgbFrame);
+    }
+
+    /**
+     * Draw picture and save the bitmap
+     * Called by C code at STATE_SHOOT
+     * */
+    private void savePicture(Bitmap picture){
+
+        playerState.setState(PlayerState.STATE_PLAY);
+        //copy rgbFrame to photoFrame and save to file
+        picture = rgbFrame.copy(Bitmap.Config.ARGB_8888, false);
+        if(picture == null){
+            //TODO:notify the failure of copying bitmap
+        }
+        bmpSaver.setBitmap(picture);
+        //use default file name
+        bmpSaver.setFileName(null);
+        future = pool.submit(bmpSaver);
+
+    }
+
+    public void setPhotoPath(String path){
+        bmpSaver.setWholePath(path);
+    }
+    public String getPhotoPath(){
+        return bmpSaver.getWholePath();
+    }
+
+    public File getLastSavedPicture() {
+        try {
+            lastSavedPicture = (File) future.get();
+        } catch (Exception e){
+            Log.e(TAG, "failed to get saved picture", e);
+        }
+        return lastSavedPicture;
+    }
+
+    /*
+    * Deinit the SurfaceView
+    * */
+    public void close(){
+        pool.shutdown();
     }
 }

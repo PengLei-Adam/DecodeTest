@@ -2,28 +2,42 @@ package com.example.decodetest;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.*;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.Toast;
+import edu.tfnrc.rtp.codec.h264.NativeH264Decoder;
 
 public class DecodeMain extends Activity implements View.OnClickListener{
 
 	private static final String TAG = "DecodeMain";
 
-	private String uri = "rtsp://192.168.2.1:6880/test.264";
+	private static final String LAST_URI = "LAST_URI";
+
+	private static final String PREF_FILE_KEY = "URI_PREF";
+
+	private String uri;
 
 	private Button buttonClose;
 	private Button buttonStart;
+	private Button buttonShoot;
+	private Button buttonRecord;
+	private Button buttonEndRecord;
 
 	private VideoSurfaceView surfaceView = null;
 
 	private RtspPlayer player;
 
 	private AlertDialog alertDialog = null;
+
+	private SharedPreferences sharedPref;
+	SharedPreferences.Editor editor;
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		Log.d(TAG, "onCreate");
@@ -38,8 +52,8 @@ public class DecodeMain extends Activity implements View.OnClickListener{
 
 		surfaceView = (VideoSurfaceView)findViewById(R.id.videoSurface);
 
-		/*buttonInit = (Button)findViewById(R.id.buttonInit);
-		buttonInit.setOnClickListener(this);*/
+		buttonRecord = (Button)findViewById(R.id.buttonRecord);
+		buttonRecord.setOnClickListener(this);
 
 		buttonClose = (Button)findViewById(R.id.buttonClose);
 		buttonClose.setOnClickListener(this);
@@ -47,12 +61,25 @@ public class DecodeMain extends Activity implements View.OnClickListener{
 		buttonStart = (Button)findViewById(R.id.buttonStart);
 		buttonStart.setOnClickListener(this);
 
-		Log.d(TAG, "new player");
+		buttonShoot = (Button)findViewById(R.id.buttonShoot);
+		buttonShoot.setOnClickListener(this);
+
+		buttonEndRecord =(Button)findViewById(R.id.buttonEndRecord);
+		buttonEndRecord.setOnClickListener(this);
+
 //		nalReader = new NalReader(/*Environment.getExternalStorageDirectory()*/
 //				"/sdcard/Pictures/frames7.264");
-		player = new RtspPlayer(uri, surfaceView);
-		player.prepare();
+		sharedPref = getSharedPreferences(PREF_FILE_KEY, Context.MODE_PRIVATE);
+		uri = sharedPref.getString(LAST_URI, getString(R.string.default_uri));
 
+	}
+	@Override
+	protected void onStart() {
+		super.onStart();
+		Log.d(TAG, "new player");
+
+		player = new RtspPlayer(surfaceView);
+		player.prepare();
 	}
 
 
@@ -61,26 +88,28 @@ public class DecodeMain extends Activity implements View.OnClickListener{
 
 		//Set a AlertDialog.Builder
 		final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-		if(builder == null){
-			Log.d(TAG, "builder is null");
-			return;
-		}
 		builder.setTitle("Input remote video address");
 		//Load layout file
-		builder.setView((LinearLayout)getLayoutInflater().inflate(R.layout.dialog_input_uri, null));
+		View layout = getLayoutInflater().inflate(R.layout.dialog_input_uri, null);
+		final EditText  uriEdit = (EditText)layout.findViewById(R.id.uriEdit);
+		if(uriEdit != null){
+			uriEdit.setText(uri);
+		}
+		builder.setView(layout);
 		builder.setPositiveButton("确定",
 				new DialogInterface.OnClickListener() {
 					@Override
 					public void onClick(DialogInterface dialog, int which) {
-						EditText textUri = (EditText)alertDialog.findViewById(R.id.uriEdit);
-						if(textUri == null){
+
+						if (uriEdit == null) {
 							Log.d(TAG, "EditText is null");
 							return;
 						}
-						String uriInput = (textUri).getText().toString();
-						//TODO:check whether the uri is correct
-						player.setUri(uriInput);
-						player.start();
+						uri = (uriEdit).getText().toString();
+						sharedPref.edit().putString(LAST_URI, uri).apply();
+						//TODO:check whether the uri correct
+						player.setUri(uri);
+						new Thread(player).start();
 					}
 				}
 		);
@@ -92,12 +121,21 @@ public class DecodeMain extends Activity implements View.OnClickListener{
 	public void onClick(View v) {
 		switch(v.getId()){
 			case R.id.buttonClose:
-				player.closePlayer();
+				player.stopPlay();
 
 				break;
 			case R.id.buttonStart:
 				setDialog();
 				alertDialog.show();
+				break;
+			case R.id.buttonShoot:
+				player.takePicture();
+				break;
+			case R.id.buttonRecord:
+				player.startRecord();
+				break;
+			case R.id.buttonEndRecord:
+				player.endRecord();
 				break;
 
 			default:
@@ -134,6 +172,11 @@ public class DecodeMain extends Activity implements View.OnClickListener{
 //			}
 //		}
 //	};
-	
 
+
+	@Override
+	protected void onDestroy() {
+		super.onDestroy();
+		player.stopPlay();
+	}
 }

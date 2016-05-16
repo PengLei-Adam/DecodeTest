@@ -39,6 +39,12 @@ JNIEXPORT jint JNICALL Java_edu_tfnrc_rtp_codec_h264_NativeH264Decoder_DecodeAnd
 JNIEXPORT jint JNICALL Java_edu_tfnrc_rtp_codec_h264_NativeH264Decoder_SetDecoderState
   (JNIEnv *, jclass, jint);
 
+JNIEXPORT jint JNICALL Java_edu_tfnrc_rtp_codec_h264_NativeH264Decoder_GetDecoderState
+  (JNIEnv *, jclass);
+
+JNIEXPORT jint JNICALL Java_edu_tfnrc_rtp_codec_h264_NativeH264Decoder_SetVideoName
+  (JNIEnv * env, jclass clazz, jstring jname);
+
 #ifdef __cplusplus
 }
 #endif

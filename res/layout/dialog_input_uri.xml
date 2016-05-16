@@ -6,7 +6,6 @@
         >
     <EditText android:layout_width="match_parent" android:layout_height="wrap_content"
             android:id="@+id/uriEdit"
-              android:text="@string/default_uri"
               android:inputType="textUri"
             />
 

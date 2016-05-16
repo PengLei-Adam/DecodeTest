@@ -28,4 +28,8 @@ public class NativeH264Decoder {
     public static native int DecodeAndConvert(String jurl, VideoSurfaceView surfaceView);
 
     public static native int SetDecoderState(int stateId);
+
+    public static native int GetDecoderState();
+
+    public static native int SetVideoName(String jname);
 }

@@ -2,6 +2,7 @@
 #include<jni.h>
 #include<stdlib.h>
 #include<pthread.h>
+#include<errno.h>
 #include "edu_tfnrc_rtp_codec_h264_NativeH264Decoder.h"
 #include "libavcodec/avcodec.h"
 #include "libavutil/avutil.h"
@@ -17,11 +18,23 @@
 #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 
+#define SECOND_TIME_STAMP 100000
+
 #define STATE_OFF		0
 #define STATE_READY		1
 #define STATE_PLAY		2
 #define STATE_PAUSE		3
-#define STATE_CLOSE		4
+#define STATE_SHOOT		4
+#define STATE_RECORD	5
+#define STATE_END_RECORD	6
+#define STATE_CLOSE		7
+#define STATE_CLOSED	8
+
+enum RecordState {
+	RECORD_OFF,
+	RECORD_INITED,
+	RECORD_CLOSE
+};
 
 //Global variables
 
@@ -32,15 +45,18 @@ AVDictionary * opts;		/*Dictionary*/
 int cnt;					/*解码计数*/
 int  got_picture;			/*是否解码一帧图像*/
 AVFrame * picture, * pictureARGB;		/*解码后的图像帧空间*/
-FILE * out_file;						/*输出文件*/
 AVFormatContext *pFormatCtx;			/*流文件*/
-struct Swscontext * img_convert_ctx;	/*转换格式结构*/
+AVFormatContext * outFormatCtx;						/*输出流文件*/
+struct SwsContext * img_convert_ctx;	/*转换格式结构*/
 char * url;					/*传入的视频流地址*/
-int state;					/*设置解码器状态*/
+volatile int state;					/*设置解码器状态*/
+enum RecordState rec_st = RECORD_OFF;	/*录像状态*/
+char * video_name;				/*录像文件完整路径加文件名*/
 
 //pthread variables
 static pthread_mutex_t statelock = PTHREAD_MUTEX_INITIALIZER;
-pthread_t thread;
+static pthread_t thread;
+static pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 
 /*设置解码器状态函数*/
 int setState(int stateId){
@@ -48,7 +64,7 @@ int setState(int stateId){
 	if(error = pthread_mutex_lock(&statelock)){
 		LOGD("failed to lock state: Error %d", error);
 	}
-	if(stateId < 0 || stateId > STATE_CLOSE)
+	if(stateId < 0 || stateId > STATE_CLOSED)
       		return -1;
 	state = stateId;
 	if(error = pthread_mutex_unlock(&statelock)){
@@ -75,6 +91,21 @@ char* Jstring2CStr(JNIEnv* env, jstring jstr){
 		return rtn;
 	}
 
+JNIEXPORT jint JNICALL Java_edu_tfnrc_rtp_codec_h264_NativeH264Decoder_SetVideoName
+  (JNIEnv * env, jclass clazz, jstring jname){
+  int error;
+  	if(error =pthread_mutex_lock(&statelock)){
+  		LOGD("failed to lock state: Error %d", error);
+  	}
+  		if(!video_name)
+  			free(video_name);
+  		video_name = Jstring2CStr(env, jname);
+  	if(error = pthread_mutex_unlock(&statelock)){
+    		LOGD("failed to unlock state: Error %d", error);
+    	}
+    return video_name ? 0 : -1;
+  }
+
 JNIEXPORT jint JNICALL Java_edu_tfnrc_rtp_codec_h264_NativeH264Decoder_InitDecoder
   (JNIEnv * env, jclass clazz){
 
@@ -99,14 +130,23 @@ JNIEXPORT jint JNICALL Java_edu_tfnrc_rtp_codec_h264_NativeH264Decoder_InitDecod
 
   JNIEXPORT jint JNICALL Java_edu_tfnrc_rtp_codec_h264_NativeH264Decoder_DeinitDecoder
     (JNIEnv * env, jclass clazz){
-	if(state != STATE_PLAY) return state;
+	if(state != STATE_PLAY && state != STATE_PAUSE) return state;
 	setState(STATE_CLOSE);
 //    if(out_file) fclose(out_file);
 	int error;
+	int *pret;
 
-	if(error = pthread_join(thread, NULL)){
-		LOGD("failed to join decode thread: Error %d", error);
+	if(error = pthread_mutex_lock(&statelock)){
+		LOGD("faild to lock state close");
 	}
+	while(state != STATE_CLOSED ){
+	if(error = pthread_cond_wait(&cond, &statelock)){
+		LOGD("failed to wait decode thread: Error %s", strerror(error));
+	}
+	}
+	if(error = pthread_mutex_unlock(&statelock)){
+    	LOGD("failed to unlock state: Error %d", strerror(error));
+    }
     /*关闭CODEC，释放资源,调用decode_end本地函数*/
 	if(c) {
 		avcodec_close(c);
@@ -138,8 +178,13 @@ JNIEXPORT jint JNICALL Java_edu_tfnrc_rtp_codec_h264_NativeH264Decoder_InitDecod
 
     	url = Jstring2CStr(env, jurl);
         av_dict_set(&opts, "rtsp_transport", "tcp", 0);
+
+//        av_dict_set(&opts, "rtsp_transport", "udp_multicast", 0);
         int ret;
         char erbuf[256];
+
+
+
         // 打开流文件
         pFormatCtx = avformat_alloc_context();
         if(!pFormatCtx)
@@ -171,6 +216,10 @@ JNIEXPORT jint JNICALL Java_edu_tfnrc_rtp_codec_h264_NativeH264Decoder_InitDecod
         if (videoStream == -1)
         	return -1;
 
+        //Log the info of pFormatCtx
+//        LOGI("pFormatCtx->oformat: %p\npFormatCtx->filename: %s\npFormatCtx->flags: %x\npFormatCtx->pb: %p",
+//        	pFormatCtx->oformat, pFormatCtx->filename, pFormatCtx->flags, pFormatCtx->pb);
+
         // Get a pointer to the codec context for the video stream
         c = pFormatCtx->streams[videoStream]->codec;
     	/*查找 流 CODEC(H264)*/
@@ -186,12 +235,13 @@ JNIEXPORT jint JNICALL Java_edu_tfnrc_rtp_codec_h264_NativeH264Decoder_InitDecod
     		return -2;
     	}
     	/*为AVFrame申请空间，并清零*/
-      picture = av_frame_alloc();
-      pictureARGB = av_frame_alloc();
+     	picture = av_frame_alloc();
     	if(!picture) 	{
     		LOGD("failed to init AVFrame");
     		return -3;
     	}
+    	pictureARGB = av_frame_alloc();
+
     	if(!pictureARGB){
     		LOGD("failed to init pictureARGB");
     		return -3;
@@ -223,7 +273,6 @@ JNIEXPORT jint JNICALL Java_edu_tfnrc_rtp_codec_h264_NativeH264Decoder_InitDecod
 
 
 		//Call Java class VideoSurfaceView
-
 		jclass jclass_surfaceView = (*env)->GetObjectClass(env, jinput_object);
 		if(!jclass_surfaceView){
 			LOGD("failed to find surfaceView");
@@ -231,10 +280,9 @@ JNIEXPORT jint JNICALL Java_edu_tfnrc_rtp_codec_h264_NativeH264Decoder_InitDecod
 		}
 		jmethodID jdraw = (*env)->GetMethodID(env, jclass_surfaceView, "drawPicture", "(II)V");
 		if(!jdraw){
-			LOGD("can't find draw method");
+			LOGD("can't find method drawPicture()");
 			return -5;
 		}
-
 		jfieldID fid_frameData = (*env)->GetFieldID(env, jclass_surfaceView, "frameData", "[I");
 		if(!fid_frameData){
 			LOGD("failed to find fid_frameData");
@@ -246,15 +294,30 @@ JNIEXPORT jint JNICALL Java_edu_tfnrc_rtp_codec_h264_NativeH264Decoder_InitDecod
            	LOGD("failed to get array of framData");
             return -7;
         }
-        jint *bufferARGB = (*env)->GetIntArrayElements(env, jframeData, NULL);
+		jint *bufferARGB = (*env)->GetIntArrayElements(env, jframeData, NULL);
+        if(!bufferARGB){
+        	LOGD("failed to get jframeData");
+        	return -8;
+        }
+        jfieldID joffset = (*env)->GetFieldID(env, jclass_surfaceView, "offset", "I");
+        if(!joffset){
+        	LOGD("failed to get joffset");
+        	return -9;
+        }
+     	int offset = (((0x10 - (int)bufferARGB) & 0xf) & 0xf) >> 2;
+     	(*env)->SetIntField(env, jinput_object, joffset, offset);
+     	LOGD("offset = %d", offset);
+
+		int numBytes/* = (*env)->GetArrayLength(env, jframeData)*/;
 
     	/**即使我们申请了一帧的内存，当转换的时候，我们仍然需要一个地方来放置原始的数据。我们使用
         		avpicture_get_size来获得我们需要的大小，然后手工申请内存空间：**/
-        uint8_t *bufferYUV;
-        int numBytes;
+//        uint8_t *bufferYUV;
+
         // Determine required buffer size and allocate buffer
         numBytes = avpicture_get_size(AV_PIX_FMT_YUV420P, c->width, c->height);//AV_PIX_FMT_YUV420P
-        bufferYUV = (uint8_t *)av_malloc(numBytes*sizeof(uint8_t));
+//        bufferYUV = (uint8_t *)av_malloc(numBytes*sizeof(uint8_t));
+        LOGI("numBytes = %d", numBytes);
 
         numBytes = avpicture_get_size(AV_PIX_FMT_RGB32, c->width, c->height);
 //        bufferARGB = (uint8_t *)av_malloc(numBytes * sizeof(uint8_t));
@@ -264,31 +327,39 @@ JNIEXPORT jint JNICALL Java_edu_tfnrc_rtp_codec_h264_NativeH264Decoder_InitDecod
     	// Assign appropriate parts of buffer to image planes in pFrameRGB
     	// Note that pFrameRGB is an AVFrame, but AVFrame is a superset
     	// of AVPicture
-    	avpicture_fill((AVPicture *)picture, bufferYUV, AV_PIX_FMT_YUV420P, c->width, c->height);//AV_PIX_FMT_YUV420P
-		avpicture_fill((AVPicture *)pictureARGB, (uint8_t *)bufferARGB, AV_PIX_FMT_RGB32, c->width, c->height);
+//    	avpicture_fill((AVPicture *)picture, bufferYUV, AV_PIX_FMT_YUV420P, c->width, c->height);//AV_PIX_FMT_YUV420P
+		avpicture_fill((AVPicture *)pictureARGB, (uint8_t *)(bufferARGB + offset), AV_PIX_FMT_RGB32, c->width, c->height);
 
-        img_convert_ctx = sws_getContext(c->width, c->height, AV_PIX_FMT_YUV420P, c->width, c->height,
+		LOGI("argb->buffer=%p\tdata[0]=%p", bufferARGB, pictureARGB->data[0]);
+
+        img_convert_ctx = sws_getCachedContext(img_convert_ctx, c->width, c->height, AV_PIX_FMT_YUV420P, c->width, c->height,
                         AV_PIX_FMT_RGB32, SWS_BICUBIC, NULL, NULL, NULL);
         if(!img_convert_ctx)
             LOGD("failed to get SwsContext");
+        LOGI("sws_scale:%p", sws_scale);
 
-
+		//check memory alignment
 		AVPacket packet;
 		int consumed_bytes;
 
-		setState(STATE_PLAY);
-		thread = pthread_self();
 		int numFrames = 0;
+		int video_dts = 0;
+		int64_t last_pts = 0;
+		int64_t record_duration = 0;	//duration of recorded video, the unit is the same as packet.pts
+		//debug chars
+//		unsigned char ch;
+//		uint8_t* pARGB = (uint8_t *)bufferARGB;
+//		uint8_t* pYUV = bufferYUV;
     	//开始解码
-		while(av_read_frame(pFormatCtx, &packet) >= 0){
-			if (packet.stream_index == videoStream) {
+		while(1){
+			if (av_read_frame(pFormatCtx, &packet) >= 0 &&
+				packet.stream_index == videoStream) {
 
     		if(state == STATE_READY){
     			state = STATE_PLAY;
     		}else if(state == STATE_PAUSE){
     			continue;
     		}else if(state == STATE_CLOSE){
-    			//TODO:Close the decoder
     			break;
     		}else if(state == STATE_OFF){
     			return -1;
@@ -303,14 +374,13 @@ JNIEXPORT jint JNICALL Java_edu_tfnrc_rtp_codec_h264_NativeH264Decoder_InitDecod
 			/*返回<0 表示解码数据头，返回>0，表示解码一帧图像*/
 			if(consumed_bytes > 0 && got_picture)
 			{
-				LOGD("decoded success: %d", ++numFrames);
-				/*从二维空间中提取解码后的图像*/
-//				for(i=0; i<c->height; i++)
-//					fwrite(picture->data[0] + i * picture->linesize[0], 1, c->width, out_file);
-//				for(i=0; i<c->height/2; i++)
-//					fwrite(picture->data[1] + i * picture->linesize[1], 1, c->width/2, out_file);
-//				for(i=0; i<c->height/2; i++)
-//					fwrite(picture->data[2] + i * picture->linesize[2], 1, c->width/2, out_file);
+//				LOGD("decoded success: %d", ++numFrames);
+				++numFrames;
+//				LOGI("pts:%lld\tdts:%lld\tduration:%d\tlast pts:%lld",packet.pts, packet.dts, packet.duration, last_pts );
+
+				//check char
+				LOGD("before sws_scale");
+
 
 				/*解码后得到YUV格式图像转换为RGB32格式*/
 				int sws_ret = sws_scale(img_convert_ctx, (const uint8_t* const*)picture->data, picture->linesize,
@@ -318,24 +388,57 @@ JNIEXPORT jint JNICALL Java_edu_tfnrc_rtp_codec_h264_NativeH264Decoder_InitDecod
                 if(0 > sws_ret)
                 	LOGD("failed to scale:%d", sws_ret);
 
+				//LOGI("linesize=%d", picture->linesize[0]);
 				//Copy buffer of pictureARGB to Java field frameData
 //                (*env)->SetIntArrayRegion(env, jframeData, 0, numBytes >> 2, (int*)bufferARGB);
                 //Call surfaceView's method -- drawPicture(width, height)
-                (*env)->CallVoidMethod(env, jinput_object, jdraw, c->width, c->height);
 
+                (*env)->CallVoidMethod(env, jinput_object, jdraw, c->width, c->height);
+                if(state == STATE_RECORD){
+                if(rec_st == RECORD_OFF){
+                	if(!last_pts) {
+                		last_pts = packet.pts;
+                		continue;
+                	}
+					if(0 > (ret = init_record(pFormatCtx, videoStream, -1, &outFormatCtx,
+							video_name, "avi", (int)(packet.pts - last_pts), SECOND_TIME_STAMP))){
+						LOGD("failed to init record: errer%d", ret);
+						state = STATE_PLAY;
+					}else{
+						video_dts = 0;
+						record_duration = packet.pts;
+						rec_st = RECORD_INITED;
+						LOGD("record inited");
+					}
+				}else{
+                 	on_recording(outFormatCtx, &packet, videoStream, video_dts++, -1, 0);
+                }
+
+                }else if(state == STATE_END_RECORD){
+                	record_duration = packet.pts - record_duration;
+                 	if(!outFormatCtx) deinit_record(outFormatCtx);
+                 	LOGD("deinit record");
+                 	last_pts = 0;
+                 	rec_st = RECORD_OFF;
+                 	state = STATE_PLAY;
+                }
 
 			}
 		}
+		// Free the packet that was allocated by av_read_frame
+		av_free_packet(&packet);
 	}
 //		(*env)->ReleaseIntArrayElements(env, jframeData, (jint*)bufferARGB, 0);
-		// Free the packet that was allocated by av_read_frame
-    av_free_packet(&packet);
 
 	(*env)->ReleaseIntArrayElements(env, jframeData, bufferARGB, 0);
 //	(*env)->DeleteLocalRef(env, jframeData);
-	av_free(bufferYUV);
-	av_free(bufferARGB);
+//	av_free(bufferARGB);
+//	pictureARGB->data = NULL;
 	free(url);
+	state = STATE_CLOSED;
+	if(pthread_cond_signal(&cond)){
+		LOGD("failed to signal");
+	}
     	return 0;
 
 }
@@ -364,3 +467,8 @@ JNIEXPORT jint JNICALL Java_edu_tfnrc_rtp_codec_h264_NativeH264Decoder_SetDecode
 
   	return setState(stateId);
   }
+  JNIEXPORT jint JNICALL Java_edu_tfnrc_rtp_codec_h264_NativeH264Decoder_GetDecoderState
+    (JNIEnv *env, jclass clazz){
+
+    	return state;
+    }
