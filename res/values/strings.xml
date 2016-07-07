@@ -3,7 +3,17 @@
 
     <string name="app_name">DecodeTest</string>
     <string name="hello_world">Hello world!</string>
+    <string name="action_view_media">com.example.decodetest.activity.ACTION_MEDIA</string>
     <string name="action_settings">Settings</string>
     <string name="default_uri">rtsp://admin:admin@192.168.1.2/11</string>
+    <string name="dialog_ok">确定</string>
+    <string name="dialog_cancel">取消</string>
+
+    <string name="save_photo_fail">拍照失败</string>
+    <string name="save_photo_succeed">拍照成功</string>
+    <string name="recording_start">开始录像</string>
+    <string name="recording_end">结束录像</string>
+    <string name="open_photos">查看照片</string>
+    <string name="open_videos">查看视频</string>
 
 </resources>

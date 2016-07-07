@@ -1,12 +1,22 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    tools:context="com.example.decodetest.DecodeMain" >
+    tools:context=".activity.DecodeMain" >
 
     <item
         android:id="@+id/action_settings"
         android:orderInCategory="100"
         android:title="@string/action_settings"
+        />
+    <item
+        android:id="@+id/menu_open_photos"
+        android:orderInCategory="100"
+        android:title="@string/open_photos"
+        />
+    <item
+        android:id="@+id/menu_open_videos"
+        android:orderInCategory="100"
+        android:title="@string/open_videos"
         />
 
 </menu>

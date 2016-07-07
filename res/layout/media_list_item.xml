@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal" android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <ImageView android:layout_height="72dp" android:layout_width="128dp"
+        android:id="@+id/mediaPreview"
+        android:padding="3dp"
+        android:background="@drawable/ic_photo_default"/>
+    <RelativeLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:id="@+id/mediaDesc"
+        android:layout_marginStart="5dp"
+        android:layout_marginEnd="5dp"
+        >
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/mediaName"
+            android:paddingTop="3dp"
+            android:paddingBottom="3dp"
+            android:layout_alignParentStart="true"
+            android:textSize="@dimen/media_filename_size"
+            />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/mediaSize"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentBottom="true"
+            android:textSize="@dimen/media_width_text_size"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentEnd="true"
+            android:id="@+id/mediaHeight"
+            android:textSize="@dimen/media_width_text_size"
+            android:textColor="@color/extra_desc_text_color"
+            />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignBottom="@id/mediaHeight"
+            android:layout_toStartOf="@id/mediaHeight"
+            android:text="×"
+            android:id="@+id/textX"
+            android:layout_marginLeft="2dp"
+            android:layout_marginRight="2dp"
+            android:textSize="@dimen/media_width_text_size"
+            android:textColor="@color/extra_desc_text_color"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/mediaWidth"
+            android:layout_alignBottom="@id/textX"
+            android:layout_toStartOf="@id/textX"
+            android:textSize="@dimen/media_width_text_size"
+            android:textColor="@color/extra_desc_text_color"
+            />
+    </RelativeLayout>
+
+
+</LinearLayout>

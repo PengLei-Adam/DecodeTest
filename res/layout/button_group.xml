@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+              >
+    <com.example.decodetest.ui.button.PlayStateButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/buttonStartStop"
+            android:src="@drawable/ic_start_purple"
+
+            />
+    <ImageButton android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:id="@+id/buttonShoot"
+            android:src="@drawable/ic_shoot_purple"
+            />
+    <com.example.decodetest.ui.button.RecordStateButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/buttonRecord"
+            android:src="@drawable/ic_record_purple"
+            />
+    <!--<Button android:layout_width="wrap_content" android:layout_height="wrap_content"-->
+            <!--android:id="@+id/buttonEndRecord"-->
+            <!--android:text="EndRecord"-->
+            <!--/>-->
+    <!--<Button android:layout_width="wrap_content" android:layout_height="wrap_content"-->
+            <!--android:id="@+id/buttonClose"-->
+            <!--android:text="Close" />-->
+
+</merge>

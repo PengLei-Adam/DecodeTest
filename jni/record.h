@@ -26,7 +26,7 @@ int deinit_record(AVFormatContext *oc);
 * Should be in a loop to record several frames.
 * video_dts add one by one for each frame.
 */
-int on_recording(AVFormatContext * oc, AVPacket * packet, 
+int on_recording(AVFormatContext * ic, AVFormatContext * oc, AVPacket * packet,
 				int videostream, int video_dts,
 				int audiostream, int audio_dts);
 

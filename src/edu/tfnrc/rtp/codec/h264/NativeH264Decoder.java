@@ -1,12 +1,12 @@
 package edu.tfnrc.rtp.codec.h264;
 
-import com.example.decodetest.VideoSurfaceView;
+import com.example.decodetest.ui.surface.VideoSurfaceView;
 
 /**
  * Created by leip on 2016/1/16.
  */
 public class NativeH264Decoder {
-    //¼ÓÔØË³ÐòÐèÒª×¢Òâ
+    //ï¿½ï¿½ï¿½ï¿½Ë³ï¿½ï¿½ï¿½ï¿½Òª×¢ï¿½ï¿½
     static {
         System.loadLibrary("avutil-55");
         System.loadLibrary("postproc-54");

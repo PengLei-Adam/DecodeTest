@@ -56,26 +56,27 @@ int init_record(AVFormatContext *ic/*已经打开的视频文件上下文*/,int 
 			*out_oc = NULL;
 			return -3;
 		}
-        // st->codec->codec_id           =  ic ->streams[videostream] ->codec->codec_id;  
-        // st->codec->codec_type     =  CODEC_TYPE_VIDEO;  
-        // st->codec->bit_rate           =  ic ->streams[videostream] ->codec->bit_rate;  
-        // st->codec->width          =  ic ->streams[videostream] ->codec->width;  
-        // st->codec->height         =  ic ->streams[videostream] ->codec->height;  
-        // st->codec->gop_size           =  ic ->streams[videostream] ->codec->gop_size;  
-        // st->codec->pix_fmt            =  ic ->streams[videostream] ->codec->pix_fmt;  
-        // st->codec->frame_size     =  ic ->streams[videostream] ->codec->frame_size;  
-        // st->codec->has_b_frames       =  ic ->streams[videostream] ->codec->has_b_frames;  
-        // st->codec->extradata      =  ic ->streams[videostream] ->codec->extradata;  
-        // st->codec->extradata_size =  ic ->streams[videostream] ->codec->extradata_size;  
-        // st->codec->codec_tag      =  ic ->streams[videostream] ->codec->codec_tag;  
-        // st->codec->bits_per_raw_sample        =  ic ->streams[videostream] ->codec->bits_per_raw_sample;  
-        // st->codec->chroma_sample_location =  ic ->streams[videostream] ->codec->chroma_sample_location;  
+         st->codec->codec_id           =  ic ->streams[videostream] ->codec->codec_id;
+         st->codec->codec_type     =  AVMEDIA_TYPE_VIDEO;
+         st->codec->bit_rate           =  ic ->streams[videostream] ->codec->bit_rate;
+         st->codec->width          =  ic ->streams[videostream] ->codec->width;
+         st->codec->height         =  ic ->streams[videostream] ->codec->height;
+//         st->codec->gop_size           =  ic ->streams[videostream] ->codec->gop_size;
+         st->codec->pix_fmt            =  ic ->streams[videostream] ->codec->pix_fmt;
+         st->codec->frame_size     =  ic ->streams[videostream] ->codec->frame_size;
+         st->codec->has_b_frames       =  ic ->streams[videostream] ->codec->has_b_frames;
+         st->codec->extradata      =  ic ->streams[videostream] ->codec->extradata;
+         st->codec->extradata_size =  ic ->streams[videostream] ->codec->extradata_size;
+//         st->codec->codec_tag      =  ic ->streams[videostream] ->codec->codec_tag;
+         st->codec->bits_per_raw_sample        =  ic ->streams[videostream] ->codec->bits_per_raw_sample;
+         st->codec->chroma_sample_location =  ic ->streams[videostream] ->codec->chroma_sample_location;
 //        st->time_base.den            =  ic ->streams[videostream] ->time_base.den;
 //        st->time_base.num            =  ic ->streams[videostream] ->time_base.num;
-//        st->cur_dts                  =  ic ->streams[videostream] ->cur_dts;
+        st->cur_dts                  =  0;
+          st->first_dts                =  0;
 //        st->stream_copy              =  1;
-//        st->pts.den                  =  ic ->streams[videostream] ->time_base.den;
-//        st->pts.num                  =  ic ->streams[videostream] ->time_base.num;
+        st->pts.den                  =  ic ->streams[videostream] ->time_base.den;
+        st->pts.num                  =  ic ->streams[videostream] ->time_base.num;
         if( oc ->oformat->flags & AVFMT_GLOBALHEADER)  
             st ->codec->flags |= CODEC_FLAG_GLOBAL_HEADER;  
          if(av_q2d(ic ->streams[videostream] ->codec->time_base)*ic ->streams[videostream] ->codec->ticks_per_frame > av_q2d(ic ->streams[videostream]->time_base) &&
@@ -86,13 +87,22 @@ int init_record(AVFormatContext *ic/*已经打开的视频文件上下文*/,int 
          }
          else
          {
+//                LOGI("ic->time_base:num=%d, den=%d",
+//                ic ->streams[videostream] ->codec->time_base.num,
+//                ic ->streams[videostream] ->codec->time_base.den);
 //             st->codec->time_base = ic ->streams[videostream] ->time_base;
                 st->codec->time_base = (AVRational){num, den};
+//                st->r_frame_rate = (AVRational){den, num};
+//                st->avg_frame_rate = (AVRational){den, num};
+//                st->time_base = (AVRational){num, den};
+
          }
          st->disposition              =  ic ->streams[videostream] ->disposition;
          //log
          codec_t = st ->codec;
-//         LOGI("avg_frame_rate=%d, %d", st->avg_frame_rate, ic->streams[videostream]->avg_frame_rate);
+//         LOGI("avg_frame_rate=%d/%d, %d/%d", st->frame_rate.num, st->frame_rate.den,
+//            ic->streams[videostream]->avg_frame_rate.num, ic->streams[videostream]->avg_frame_rate.den);
+            LOGI("stream->first_dts=%lld", st->first_dts);
     }
 	if(audiostream >= 0 )  
     {  
@@ -180,8 +190,8 @@ int init_record(AVFormatContext *ic/*已经打开的视频文件上下文*/,int 
 
 int deinit_record(AVFormatContext * oc)
 {
-	//写文件尾  
-    av_write_trailer(oc);  
+	//写文件尾
+    av_write_trailer(oc);
   
     /* close the output file if need.*/  
     if (!(oc ->oformat->flags & AVFMT_NOFILE))   
@@ -193,7 +203,7 @@ int deinit_record(AVFormatContext * oc)
 	return 0;
 }
 
-int on_recording(AVFormatContext * oc, AVPacket * packet, 
+int on_recording(AVFormatContext * ic, AVFormatContext * oc, AVPacket * packet,
 				int videostream, int video_dts,
 				int audiostream, int audio_dts)
 {
@@ -202,20 +212,25 @@ int on_recording(AVFormatContext * oc, AVPacket * packet,
             //计算时间视频戳，顺序+1
         if(packet->stream_index == videostream)
             {  
+//                packet->dts = ic->streams[videostream]->codec->ticks_per_frame * av_rescale_q(packet->pts, ic->streams[videostream]->codec->time_base, oc->streams[videostream]->time_base);
+//                packet->pts = ic->streams[videostream]->codec->ticks_per_frame * av_rescale_q(packet->pts, ic->streams[videostream]->codec->time_base, oc->streams[videostream]->time_base);
+
                 packet->dts = video_dts;
                 packet->pts = video_dts;
+//                LOGI("packet->dts=%lld", packet->dts);
             }  
             else if(packet->stream_index == audiostream)//计算音频时间戳
             {  
                 packet->dts = audio_dts;  
-                packet->pts = audio_dts/* * (1000 * packet->size /oc ->streams[audiostream]->codec ->sample_rate)*/;
+                packet->pts = audio_dts;// (1000 * packet->size /oc ->streams[audiostream]->codec ->sample_rate)
             }  
             packet->flags |= AV_PKT_FLAG_KEY;
-            if(av_interleaved_write_frame(oc,packet)<0)
+            if(av_write_frame(oc,packet)<0)
             {  
                 LOGD("st:%d\twrite frame failed.\n",packet->stream_index);  
 				return -1;
-            }  
+            }
+
 			return 0;
         } else{
 			LOGD("packet data is empty");
