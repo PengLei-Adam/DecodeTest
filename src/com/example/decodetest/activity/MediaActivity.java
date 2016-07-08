@@ -1,5 +1,6 @@
 package com.example.decodetest.activity;
 
+import android.app.ActionBar;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -29,6 +30,10 @@ public class MediaActivity extends FragmentActivity {
 
         MediaPagerAdapter mediaAdapter = new MediaPagerAdapter(getSupportFragmentManager());
         viewPager.setAdapter(mediaAdapter);
+
+        ActionBar bar = getActionBar();
+        if(bar != null)
+            bar.setDisplayHomeAsUpEnabled(true);
     }
 
 

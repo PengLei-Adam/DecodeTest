@@ -2,6 +2,7 @@ package com.example.decodetest.ui.fragment;
 
 import android.app.LoaderManager;
 import android.content.ContentUris;
+import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -11,8 +12,10 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ListView;
 
 import com.example.decodetest.Constants;
+import com.example.decodetest.R;
 import com.example.decodetest.media.PhotoInfo;
 import com.example.decodetest.provider.MediaProvider;
 
@@ -41,6 +44,8 @@ public class PhotoLibraryFragment extends MediaLibraryFragment{
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
+        setAdapterLayout(R.layout.list_item_photo);
+
         //init loader
         getLoaderManager().initLoader(0, null, this);
 
@@ -52,7 +57,6 @@ public class PhotoLibraryFragment extends MediaLibraryFragment{
 
     @Override
     protected void refreshList() {
-        super.refreshList();
 
         int count = cr.delete(MediaProvider.CONTENT_URI_PHOTOS, null, null);
 
@@ -98,6 +102,21 @@ public class PhotoLibraryFragment extends MediaLibraryFragment{
         }
 
 
+    }
+
+    @Override
+    public void onListItemClick(ListView l, View v, int position, long id) {
+        super.onListItemClick(l, v, position, id);
+        String fileName = findFileNameFromView(v, R.id.mediaName);
+        if(fileName != null){
+            File file = new File(Constants.PHOTO_DIRECTORY, fileName);
+            if(file.exists()) {
+                Uri uri = Uri.fromFile(file);
+                Intent i = new Intent(Intent.ACTION_VIEW);
+                i.setDataAndType(uri, "image/*");
+                startActivity(i);
+            }
+        }
     }
 
 

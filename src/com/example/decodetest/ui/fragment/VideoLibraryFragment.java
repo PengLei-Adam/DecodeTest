@@ -1,15 +1,20 @@
 package com.example.decodetest.ui.fragment;
 
+import android.content.Intent;
 import android.content.Loader;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.content.CursorLoader;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ListView;
+import android.widget.TextView;
 
 import com.example.decodetest.Constants;
+import com.example.decodetest.R;
 import com.example.decodetest.media.VideoInfo;
 import com.example.decodetest.provider.MediaProvider;
 
@@ -30,6 +35,8 @@ public class VideoLibraryFragment extends MediaLibraryFragment {
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
+        setAdapterLayout(R.layout.list_item_video);
+
         //init loader
         getLoaderManager().initLoader(0, null, this);
 
@@ -40,7 +47,6 @@ public class VideoLibraryFragment extends MediaLibraryFragment {
 
     @Override
     protected void refreshList() {
-        super.refreshList();
 
         int count = cr.delete(MediaProvider.CONTENT_URI_VIDEOS, null, null);
 
@@ -84,6 +90,21 @@ public class VideoLibraryFragment extends MediaLibraryFragment {
                 addNewItem(MediaProvider.CONTENT_URI_VIDEOS, videoInfo);
 
 
+            }
+        }
+    }
+
+    @Override
+    public void onListItemClick(ListView l, View v, int position, long id) {
+        super.onListItemClick(l, v, position, id);
+        String fileName = findFileNameFromView(v, R.id.mediaName);
+        if(fileName != null){
+            File file = new File(Constants.VIDEO_DIRECTORY, fileName);
+            if(file.exists()) {
+                Uri uri = Uri.fromFile(file);
+                Intent i = new Intent(Intent.ACTION_VIEW);
+                i.setDataAndType(uri, "video/*");
+                startActivity(i);
             }
         }
     }
