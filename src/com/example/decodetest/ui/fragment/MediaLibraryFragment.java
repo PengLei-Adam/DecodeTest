@@ -20,6 +20,7 @@ import com.example.decodetest.media.MediaInfo;
 import com.example.decodetest.provider.MediaProvider;
 
 import java.text.DecimalFormat;
+import java.util.Locale;
 
 
 /**
@@ -72,9 +73,8 @@ public abstract class MediaLibraryFragment extends ListFragment implements Loade
     protected void setAdapterLayout(int layoutId){
         cursorAdapter = new MediaCursorAdapter(getActivity(),
                 layoutId, null,
-                new String[] {MediaProvider.KEY_FILENAME, MediaProvider.KEY_SIZE,
-                        MediaProvider.KEY_WIDTH, MediaProvider.KEY_HEIGHT},
-                new int[] {R.id.mediaName, R.id.mediaSize, R.id.mediaWidth, R.id.mediaHeight}
+                new String[] {MediaProvider.KEY_FILENAME, MediaProvider.KEY_SIZE},
+                new int[] {R.id.mediaName, R.id.mediaSize}
                 , 0);
 
         setListAdapter(cursorAdapter);
@@ -152,6 +152,13 @@ public abstract class MediaLibraryFragment extends ListFragment implements Loade
 
                 textSize.setText((size < 1 << 20) ? formatKB.format(size/1024f) : formatMB.format(size/1048576f));
             }
+
+            Cursor cursor = getCursor();
+            int widthColIndex = cursor.getColumnIndex(MediaProvider.KEY_WIDTH);
+            int heightColIndex = cursor.getColumnIndex(MediaProvider.KEY_HEIGHT);
+            String aspectStr = String.format(Locale.getDefault(), "%d × %d", cursor.getInt(widthColIndex), cursor.getInt(heightColIndex));
+            ((TextView)view.findViewById(R.id.textAspect)).setText(aspectStr);
+
             return view;
         }
     }

@@ -15,5 +15,6 @@
     <string name="recording_end">结束录像</string>
     <string name="open_photos">查看照片</string>
     <string name="open_videos">查看视频</string>
+    <string name="open_media">查看媒体文件</string>
 
 </resources>

@@ -9,7 +9,7 @@
 
 //初始化录像文件
 int init_record(AVFormatContext *ic/*已经打开的视频文件上下文*/,int videostream,int audiostream,
-                AVFormatContext **out_oc,const char * ofile,const char * ofileformat, int num, int den)
+                AVFormatContext **out_oc, AVBitStreamFilterContext** pbsfc, const char * ofile,const char * ofileformat, int num, int den)
 {  
     AVFormatContext *oc     = NULL;//  
     // AVOutputFormat  *fmt    = NULL;
@@ -103,6 +103,12 @@ int init_record(AVFormatContext *ic/*已经打开的视频文件上下文*/,int 
 //         LOGI("avg_frame_rate=%d/%d, %d/%d", st->frame_rate.num, st->frame_rate.den,
 //            ic->streams[videostream]->avg_frame_rate.num, ic->streams[videostream]->avg_frame_rate.den);
             LOGI("stream->first_dts=%lld", st->first_dts);
+
+            //init bit stream filter
+            if(*pbsfc){
+                av_bitstream_filter_close(*pbsfc);
+            }
+            *pbsfc = av_bitstream_filter_init("h264_mp4toannexb");
     }
 	if(audiostream >= 0 )  
     {  
@@ -188,8 +194,13 @@ int init_record(AVFormatContext *ic/*已经打开的视频文件上下文*/,int 
     return 0;  
 }  
 
-int deinit_record(AVFormatContext * oc)
+int deinit_record(AVFormatContext * oc, AVBitStreamFilterContext** pbsfc)
 {
+
+    //close bit stream filter
+    av_bitstream_filter_close(*pbsfc);
+    *pbsfc = NULL;
+
 	//写文件尾
     av_write_trailer(oc);
   
@@ -203,7 +214,7 @@ int deinit_record(AVFormatContext * oc)
 	return 0;
 }
 
-int on_recording(AVFormatContext * ic, AVFormatContext * oc, AVPacket * packet,
+int on_recording(AVFormatContext * ic, AVFormatContext * oc, AVPacket * packet, AVBitStreamFilterContext* bsfc,
 				int videostream, int video_dts,
 				int audiostream, int audio_dts)
 {
@@ -218,6 +229,11 @@ int on_recording(AVFormatContext * ic, AVFormatContext * oc, AVPacket * packet,
                 packet->dts = video_dts;
                 packet->pts = video_dts;
 //                LOGI("packet->dts=%lld", packet->dts);
+
+                //stream filter filter the h264 stream
+                av_bitstream_filter_filter(bsfc, ic->streams[videostream]->codec,
+                                            NULL, &packet->data, &packet->size,
+                                            packet->data, packet->size, 0);
             }  
             else if(packet->stream_index == audiostream)//计算音频时间戳
             {  

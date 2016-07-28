@@ -25,7 +25,7 @@
             android:textSize="@dimen/media_width_text_size"
             />
 
-        <TextView
+        <!--<TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
@@ -51,6 +51,15 @@
             android:id="@+id/mediaWidth"
             android:layout_alignBottom="@id/textX"
             android:layout_toStartOf="@id/textX"
+            android:textSize="@dimen/media_width_text_size"
+            android:textColor="@color/extra_desc_text_color"
+            />-->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/textAspect"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentEnd="true"
             android:textSize="@dimen/media_width_text_size"
             android:textColor="@color/extra_desc_text_color"
             />

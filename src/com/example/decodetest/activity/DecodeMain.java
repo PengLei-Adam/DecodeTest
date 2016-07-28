@@ -222,17 +222,21 @@ public class DecodeMain extends Activity implements View.OnClickListener, OnSurf
 				}
 				break;
 			case R.id.buttonShoot:
-				player.takePicture();
+				if(button_started) {
+					player.takePicture();
+				}
 				break;
 			case R.id.buttonRecord:
-				if(button_recording){
-					player.endRecord();
-					button_recording = false;
-					notifyButtons();
-				}else {
-					player.startRecord();
-					button_recording = true;
-					notifyButtons();
+				if(button_started) {
+					if (button_recording) {
+						player.endRecord();
+						button_recording = false;
+						notifyButtons();
+					} else {
+						player.startRecord();
+						button_recording = true;
+						notifyButtons();
+					}
 				}
 				break;
 
@@ -258,7 +262,7 @@ public class DecodeMain extends Activity implements View.OnClickListener, OnSurf
 		switch (id) {
 			case R.id.action_settings:
 				return true;
-			case R.id.menu_open_photos:
+			case R.id.menu_open_media:
 				/*Intent intent = new Intent(Intent.ACTION_VIEW);
 				Uri uri = Uri.fromFile(new File(player.getPhotoPath() + "/IMG_20160603_043712.jpg"));
 				intent.setDataAndType(uri, "image*//*");
@@ -275,9 +279,7 @@ public class DecodeMain extends Activity implements View.OnClickListener, OnSurf
 				intent.setAction(getResources().getString(MediaActivity.ID_ACTION_MEDIA));
 				startActivity(intent);
 				return true;
-			case R.id.menu_open_videos:
 
-				return true;
 		}
 		return super.onOptionsItemSelected(item);
 	}

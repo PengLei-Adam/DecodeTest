@@ -51,6 +51,7 @@ struct SwsContext * img_convert_ctx;	/*转换格式结构*/
 char * url;					/*传入的视频流地址*/
 volatile int state;					/*设置解码器状态*/
 enum RecordState rec_st = RECORD_OFF;	/*录像状态*/
+AVBitStreamFilterContext* h264bsfc;     /*用于录制时对h264流封装格式进行转换*/
 char * video_name;				/*录像文件完整路径加文件名*/
 
 //pthread variables
@@ -409,7 +410,7 @@ JNIEXPORT jint JNICALL Java_edu_tfnrc_rtp_codec_h264_NativeH264Decoder_InitDecod
                 		continue;
                 	}
                 	packet_duration = packet.pts - start_pts;
-					if(0 > (ret = init_record(pFormatCtx, videostream, -1, &outFormatCtx,
+					if(0 > (ret = init_record(pFormatCtx, videostream, -1, &outFormatCtx, &h264bsfc,
 							video_name, "avi", (int)(packet.pts - start_pts), SECOND_TIME_STAMP))){
 						LOGD("failed to init record: errer%d", ret);
 						state = STATE_PLAY;
@@ -421,13 +422,13 @@ JNIEXPORT jint JNICALL Java_edu_tfnrc_rtp_codec_h264_NativeH264Decoder_InitDecod
 					}
 				}else{
 //					packet.duration = 1;
-                 	on_recording(pFormatCtx, outFormatCtx, &packet, videostream, video_dts++, -1, 0);
+                 	on_recording(pFormatCtx, outFormatCtx, &packet, h264bsfc, videostream, video_dts++, -1, 0);
                 }
 
                 }else if(state == STATE_END_RECORD){
                 	record_duration = packet.pts - record_duration;
 
-                 	if(!outFormatCtx) deinit_record(outFormatCtx);
+                 	if(!outFormatCtx) deinit_record(outFormatCtx, &h264bsfc);
                  	LOGD("deinit record");
                  	start_pts = 0;
                  	rec_st = RECORD_OFF;

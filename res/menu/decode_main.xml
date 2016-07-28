@@ -9,14 +9,10 @@
         android:title="@string/action_settings"
         />
     <item
-        android:id="@+id/menu_open_photos"
+        android:id="@+id/menu_open_media"
         android:orderInCategory="100"
-        android:title="@string/open_photos"
+        android:title="@string/open_media"
         />
-    <item
-        android:id="@+id/menu_open_videos"
-        android:orderInCategory="100"
-        android:title="@string/open_videos"
-        />
+
 
 </menu>

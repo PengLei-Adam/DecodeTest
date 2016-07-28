@@ -165,10 +165,11 @@ public class RtspPlayer implements Runnable{
 
     @Override
     public void run() {
-        surfaceView.setState(PlayerState.STATE_PLAY);
+
         int ret = NativeH264Decoder.DecodeAndConvert(uri, this.surfaceView);
         if(0 > ret){
 
+            Log.d(TAG, "start error: " + ret);
             surfaceView.post(new Runnable() {
                 @Override
                 public void run() {
@@ -176,6 +177,8 @@ public class RtspPlayer implements Runnable{
                 }
             });
 
+        } else {
+            surfaceView.setState(PlayerState.STATE_PLAY);
         }
     }
 
